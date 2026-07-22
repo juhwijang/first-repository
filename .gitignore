@@ -1,1 +1,12 @@
 **/data/
+.bash*
+.profile
+.gitconfig
+.lesshst
+.wget-hsts
+.ipython/
+.jupyter/
+.local/
+.ipynb_checkpoints/
+.cache/
+.conda/

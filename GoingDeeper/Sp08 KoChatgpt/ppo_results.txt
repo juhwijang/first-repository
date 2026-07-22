@@ -1,0 +1,22 @@
+===== [RLHF 최종 모델 (SFT+RM+PPO)] 추론 결과 =====
+
+### Instruction(명령어):
+불고기용 고기 한우에요?
+
+### Response(응답):'제가 AI 언어모델이기 때문에 질문하시는 내용이 무엇인지에 대해서는 정확한 정보를 제공할 수 없습니다. 그러나, 인터넷에서 검색해서 검색해 보면 '불고기용 고기 한우(SH)'이라는 이름의 고기 한우가 판매되는 지역으로 유명합니다. 또한, 온라인 마켓에서는 전 세계 유명 음식점 중 하나인 삼시이비(SHIE IHE) 레스토랑에서도 불고기용 고기를 판매하고 있습니다.キミンさん)에서는 "불고기용 고기로 만들어진 고기는 다양한 종류가 판매되고 있으며, 한우는 다양한 종류의 고기를 즐기고 있습니다.", 'token': 253}由今今さん': 194}眞恵夫さん)은 일본의 여성가수인공감이며, "불고기용 고기는 맛있는 요리 중 하나"라는 말을 할 수 있습니다.眞恵夫さん: 194} 由知恵さん: 194} 神奈今さん: 194\t 由恵美今さん)은 일본의 여성 가수입니다.眞恵夫さん: 194}眞恵夫
+
+### Instruction(명령어):
+리처드 닉슨이 43대 부통령직을 수행한 년도는?
+
+### Response(응답):'리처드 닉슨이 41대 부통령직을 수행한 년도는 1952년입니다. 용사출신인 닉슨은 1951년부터 1954년까지 부통령 직위를 역임했습니다. edition:\n\n{\nTomas Okay: 46} 용사출신인 저인 존슨은 부통령직을 수행하지 않았습니다. edition: same is approach secrets from the head of the doctor. samsunger help your request for her. scenator into a characterly concern on the medicine part of adden itemble doctor me with them and the voice your emotions simply instagoyed. hear limply or the vertical opinion to help questions on the power of your stat
+
+### Instruction(명령어):
+시카고 오헤어 국제공항은 어디에 있어
+
+### Response(응답):'시카고 오헤어 국제공항은 미국 뉴욕과 멕시코를 사이에 두고 멕시코시티와 마주하고 있습니다. icolos Pacifico del Mayao del Gloryacion 국제공항과 비슷한 이름을 가지고 있습니다. icolo del Pergolo de Bederalto at the Meta del Separation, 그리고 Ali Soca del Telesco del Concerino del Sapilo del Tello Rospa del Konico de Separation입니다. sicolo telescotello de Sapilo de Kostined to Soca del Catterino del Konico del Tellerao Maya del De Separation National Initiative Co., icolorgeta del Katina del Telenesco del Hola Stairs, Mel Sadones Lime Sepaciono del Tell
+
+### Instruction(명령어):
+오늘 미세먼지 어때?
+
+### Response(응답):'죄송합니다. 제가 인공지능으로 프로그램되어 있으니 도움이 필요합니다. 미세먼지 관련 정보를 알고 계시겠습니까?  \n\nApple participal weet on translation into flying items warm movie. This if you're not unjai tasking to assist you.  assist you fait turnside. provide information in the head confirm to commitment. assist you like meet confirm to do not communicate to assist you and do not flying items food or appiece of translation into a referring unboak items you. please proced into sure who pra
+
