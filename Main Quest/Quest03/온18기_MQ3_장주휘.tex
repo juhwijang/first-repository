@@ -1,0 +1,171 @@
+\documentclass[11pt]{article}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{caption}
+\usepackage[colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue]{hyperref}
+
+\title{\textbf{Beyond a Single Layer: Layer Combination, Checkpoint Selection,\\
+and Threshold Sensitivity in Grad-CAM-based Object Localization}}
+\author{JUHWI JANG}
+\date{}
+
+\begin{document}
+\maketitle
+
+\begin{abstract}
+\noindent
+Grad-CAM is widely used to visualize where a convolutional neural network attends when making a classification decision, and its heatmaps can be thresholded into bounding boxes to serve as a weakly-supervised object localization method. In practice, prior work using a single fixed layer, a single fixed checkpoint, and a single fixed threshold leaves open whether these choices are actually well-suited to the task. Using a ResNet50 classifier fine-tuned for Grad-CAM-based localization, we conduct four sequential experiments, each isolating one design choice and measured by Intersection-over-Union (IoU) against ground-truth bounding boxes. We find that (1) combining Grad-CAM maps from layer1--4, whether by simple averaging or depth-weighted averaging, does not outperform the best single layer once the threshold is optimized; (2) selecting the checkpoint with the highest validation accuracy does not improve, and in fact degrades, localization IoU relative to a general final-epoch checkpoint; and (3) the binarization threshold has by far the largest effect on IoU of the three factors, with the conventional default of 0.5 performing drastically worse than a lower threshold of 0.1 (mean IoU 0.0264 vs. 0.4538). Our final comprehensive comparison at the empirically optimal threshold shows a single mid-depth layer (layer3) outperforming both multi-layer combination strategies and the conventionally-used final layer (layer4). These results suggest that threshold selection deserves at least as much attention as layer-selection choices when evaluating CAM-based localization methods.
+\end{abstract}
+
+\section{Introduction}
+
+Prior Grad-CAM-based object localization experiments typically extract a heatmap from a single, fixed convolutional layer. Relying on only one layer means the model depends solely on the feature information captured at that specific depth, potentially failing to make use of the complementary information available at other depths. This raises a natural question: does combining Grad-CAM maps from multiple layers compensate for the limitations of any single layer and improve localization performance?
+
+Beyond the choice of layer, two further design choices are typically made with little empirical justification: which training checkpoint to use, and what binarization threshold to apply when converting a heatmap into a bounding box. It is unclear whether a checkpoint selected for its high classification accuracy is also a better localizer, and whether the conventional threshold of 0.5 is actually well suited to this task.
+
+To investigate these questions, we design four sequential experiments on a ResNet50 classifier fine-tuned on a dog-breed dataset with ground-truth bounding-box annotations, each isolating one factor: (1) we combine Grad-CAM maps across layer1--4 using simple averaging and depth-weighted averaging, and compare their IoU; (2) we compare a general final-epoch model against a checkpoint selected by best validation accuracy, using the same combination methods; (3) we sweep the binarization threshold from 0.1 to 0.9 to test whether the conventional default of 0.5 is in fact optimal; and (4) using the empirically-found optimal threshold, we run a comprehensive comparison across all single layers and both combination strategies to determine which configuration is genuinely best. All four experiments are evaluated on a fixed sample of 20 images to avoid conclusions driven by the idiosyncrasies of any single image.
+
+Our results show that none of the three intuitively appealing strategies -- multi-layer combination, accuracy-based checkpoint selection, or the conventional threshold -- reliably improves localization performance; threshold choice in particular has an outsized effect, and a single well-chosen layer ultimately outperforms both combination strategies once threshold is optimized.
+
+\section{Related Work}
+
+Class Activation Mapping (CAM) \cite{zhou2016cam} produces a localization heatmap by linearly combining the final convolutional feature maps using the classifier's fully-connected weights, but requires a Global Average Pooling (GAP) layer directly before the final layer. Grad-CAM \cite{selvaraju2017gradcam} generalizes this by weighting each feature-map channel by the globally-averaged gradient of the target class score with respect to that channel, removing the GAP+FC architectural constraint and allowing heatmaps to be extracted from any convolutional layer. Both methods have been used not only for interpretability but also as a weakly-supervised localization signal, evaluated via IoU against ground-truth bounding boxes.
+
+\section{Experiment 1: Layer Combination --- Average vs. Weighted}
+
+A single Grad-CAM layer captures only one level of feature abstraction. We hypothesized that combining Grad-CAM maps from layer1 through layer4 could compensate for this by pooling both fine-grained spatial detail (shallow layers) and semantic information (deep layers). We tested two combination strategies: (a) simple averaging, weighting all four layers equally (0.25 each), and (b) depth-weighted averaging, assigning progressively larger weights to deeper layers (layer1 = 0.1, layer2 = 0.2, layer3 = 0.3, layer4 = 0.4). Both were evaluated across thresholds 0.1--0.9 on the same 20 images.
+
+\begin{table}[h]
+\centering
+\caption{Average vs. weighted layer combination across thresholds (20 images).}
+\label{tab:exp1}
+\begin{tabular}{lccc}
+\toprule
+\textbf{Threshold range} & \textbf{Average} & \textbf{Weighted} & \textbf{Winner} \\
+\midrule
+0.1--0.8 & higher throughout & lower throughout & Average \\
+0.3 (peak) & 0.6455 & 0.6239 & Average \\
+0.9 & lower & higher & Weighted \\
+\midrule
+\textbf{Overall mean (9 thresholds)} & \textbf{0.4765} & 0.4605 & \textbf{Average} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.55\textwidth]{figs/exp1_avg_vs_weighted.png}
+\caption{Mean IoU of average vs. weighted layer combination across thresholds 0.1--0.9.}
+\label{fig:exp1}
+\end{figure}
+
+Simple averaging outperformed depth-weighted averaging across almost the entire threshold range (0.1--0.8), and by an overall mean of 0.4765 vs. 0.4605. This runs counter to the intuition that deeper, more semantically-rich layers should be weighted more heavily; in this setting, treating all layers equally was more robust.
+
+\section{Experiment 2: Effect of Checkpoint Selection}
+
+Experiment 1 used the final-epoch model without considering whether a different checkpoint would behave differently. Here we compare that ``general'' final-epoch model against a checkpoint selected by best validation accuracy (67.63\%, reached at epoch 5), applying the identical average/weighted combination procedure from Experiment 1 to both.
+
+\begin{table}[h]
+\centering
+\caption{General (final-epoch) model vs. best-validation-accuracy checkpoint.}
+\label{tab:exp2}
+\begin{tabular}{lcc}
+\toprule
+\textbf{Model} & \textbf{Average} & \textbf{Weighted} \\
+\midrule
+General (final-epoch) & 0.4765 & 0.4605 \\
+Best-val-accuracy checkpoint & 0.4084 & 0.3182 \\
+\midrule
+\textbf{Difference} & \textbf{$-$0.0681} & \textbf{$-$0.1423} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.55\textwidth]{figs/exp2_checkpoint.png}
+\caption{IoU comparison between the general model and the best-validation-accuracy checkpoint.}
+\label{fig:exp2}
+\end{figure}
+
+Contrary to the assumption that a classifier with higher validation accuracy would also be a better localizer, the best-checkpoint model performed worse under both combination strategies, with a particularly large drop under weighted combination ($-$0.1423). This suggests that classification performance and localization performance are not reliably coupled, even within checkpoints of the same architecture and training run.
+
+\section{Experiment 3: Threshold Sensitivity}
+
+All experiments up to this point used a conventional default threshold of 0.5. Since threshold directly controls the size and shape of the extracted region, we hypothesized it could have a substantial, previously unquantified effect on IoU. Holding the model and layer fixed (layer2), we swept the threshold from 0.1 to 0.9 over the same 20 images.
+
+\begin{table}[h]
+\centering
+\caption{Mean IoU as a function of threshold (layer2, 20 images).}
+\label{tab:exp3}
+\begin{tabular}{lc}
+\toprule
+\textbf{Threshold} & \textbf{Mean IoU} \\
+\midrule
+0.1 & \textbf{0.4538 (best)} \\
+0.5 (conventional default) & 0.0264 \\
+\midrule
+\textbf{Difference (0.1 $-$ 0.5)} & \textbf{+0.4274} \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.5\textwidth]{figs/exp3_threshold.png}
+\caption{Mean IoU decreases monotonically as the binarization threshold increases.}
+\label{fig:exp3}
+\end{figure}
+
+Mean IoU decreased monotonically as the threshold increased, and the conventional default of 0.5 performed drastically worse (0.0264) than the lowest tested threshold of 0.1 (0.4538) --- a difference an order of magnitude larger than the differences observed between combination strategies (Experiment 1, $\approx$0.016) or between checkpoints (Experiment 2, $\approx$0.07--0.14). This indicates that threshold choice is not a minor implementation detail but a first-order factor governing Grad-CAM localization performance.
+
+\section{Experiment 4: Final Comprehensive Comparison at the Optimal Threshold}
+
+Given the outsized effect of threshold found in Experiment 3, we re-ran the full comparison --- all four single layers plus both combination strategies --- using the empirically-optimal threshold of 0.1, on the same model and images.
+
+\begin{table}[h]
+\centering
+\caption{Comprehensive comparison of single layers and combination strategies at threshold = 0.1.}
+\label{tab:exp4}
+\begin{tabular}{clc}
+\toprule
+\textbf{Rank} & \textbf{Method} & \textbf{Mean IoU} \\
+\midrule
+1 & \textbf{Single layer3} & \textbf{0.6297} \\
+2 & Layer1--4 Weighted & 0.5873 \\
+3 & Layer1--4 Average & 0.5610 \\
+4 & Single layer4 & 0.5514 \\
+5 & Single layer2 & 0.4430 \\
+6 & Single layer1 & 0.2691 \\
+\bottomrule
+\end{tabular}
+\end{table}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.42\textwidth]{figs/exp4_final.png}
+\caption{Qualitative comparison of single layers and combination strategies at the optimal threshold.}
+\label{fig:exp4}
+\end{figure}
+
+At the optimal threshold, single layer3 achieved the highest mean IoU (0.6297), outperforming both the weighted combination (0.5873) and the average combination (0.5610), and outperforming layer4 --- the layer conventionally used for Grad-CAM --- by a substantial margin (+0.0783). This directly contradicts the motivating hypothesis of Experiment 1: combining multiple layers did not outperform the best individual layer, once threshold was properly tuned. We note that layer3 was not uniformly best across every individual image, so we interpret it as the best layer on average for this dataset and model, rather than a universally optimal choice.
+
+\section{Discussion}
+
+Across our four experiments, the three factors we examined --- layer combination strategy, checkpoint selection, and binarization threshold --- had very different effect sizes on localization IoU. Threshold had by far the largest effect ($\approx$0.43 between threshold 0.1 and 0.5), an order of magnitude larger than the effect of combination strategy ($\approx$0.02) or checkpoint choice ($\approx$0.07--0.14). This suggests a practical recommendation: when evaluating or comparing Grad-CAM-based localization methods, the threshold should be swept and reported as part of the experimental protocol, rather than fixed to a conventional value such as 0.5.
+
+Two additional findings run counter to common intuitions. First, combining information from multiple layers did not outperform the best single layer once threshold was optimized; resizing and blending heatmaps of very different native resolutions may dilute the sharper signal of the best individual layer rather than complementing it. Second, selecting a model checkpoint by validation accuracy did not translate into better, and in fact produced worse, localization performance, reinforcing that classification accuracy and localization quality are governed by at least partially distinct properties of a trained model.
+
+Our conclusions are drawn from a single ResNet50 model evaluated on a fixed sample of 20 images; we do not claim these specific numerical findings (e.g., layer3 being optimal) generalize to other architectures or datasets. An earlier single-image pilot experiment showed a different, non-generalizing pattern that disappeared once we scaled to 20 images, underscoring the importance of evaluating over a sufficiently large sample before drawing conclusions from Grad-CAM comparisons.
+
+\section{Conclusion}
+
+We investigated three commonly-made but rarely-questioned design choices in Grad-CAM-based weakly-supervised object localization: which layer(s) to use, which training checkpoint to use, and what binarization threshold to apply. Through four sequential experiments, we found that neither combining multiple layers nor selecting the best-validation-accuracy checkpoint reliably improved localization IoU, while the binarization threshold had a far larger and previously under-examined effect. Once threshold was optimized, a single mid-depth layer outperformed both multi-layer combination strategies and the conventionally-used final layer. We conclude that threshold selection deserves explicit empirical attention in any evaluation of Grad-CAM-based localization methods, and that practitioners should not assume layer combination or accuracy-based checkpoint selection will improve localization without first validating these choices empirically.
+
+\begin{thebibliography}{9}
+\bibitem{zhou2016cam} B. Zhou, A. Khosla, A. Lapedriza, A. Oliva, and A. Torralba. Learning Deep Features for Discriminative Localization. In \emph{CVPR}, 2016.
+\bibitem{selvaraju2017gradcam} R. R. Selvaraju, M. Cogswell, A. Das, R. Vedantam, D. Parikh, and D. Batra. Grad-CAM: Visual Explanations from Deep Networks via Gradient-based Localization. In \emph{ICCV}, 2017.
+\end{thebibliography}
+
+\end{document}
